@@ -1,3 +1,7 @@
+//
+// Writter bowZhang2004
+// Created by 30252 on 2024/10/16.
+//
 # include <bits/stdc++.h>
 
 // 泛型函数
@@ -57,14 +61,7 @@ public:
 
     // 分为const/nonconst版本，对应定义时的Vector是否不变
     // 注意返回的是引用，可以直接修改Vector中的值
-    T& operator [] (size_t index) {
-        if (index >= size) {
-            throw std::out_of_range("Index out of range");
-        }
-        return elements[index];
-    }
-
-    const T& operator [] (size_t index) const {
+    T& operator [] (size_t index) const noexcept{
         if (index >= size) {
             throw std::out_of_range("Index out of range");
         }
@@ -78,6 +75,20 @@ public:
             else reserve(2 * capacity);
         }
         elements[size++] = value;
+    }
+
+    T& front() const noexcept {
+        if(size) {
+            return elements[0];
+        }
+        else throw std::out_of_range("Index out of range");
+    }
+
+    T& back() const noexcept {
+        if(size) {
+            return elements[size-1];
+        }
+        else throw std::out_of_range("Index out of range");
     }
 
     // 插入元素 Vector.insert(12, 'A')
@@ -107,19 +118,11 @@ public:
     }
 
     // 迭代器相关函数
-    T* begin() {
+    T* begin() const noexcept {
         return elements;
     }
 
-    T* end() {
-        return elements + size;
-    }
-
-    const T* begin() const {
-        return elements;
-    }
-
-    const T* end() const {
+    T* end() const noexcept {
         return elements + size;
     }
 
@@ -132,8 +135,6 @@ public:
 };
 
 
-
-// Test
 int main(){
     // 创建一个 Vector 对象
     Vector<int> myVector;
@@ -152,42 +153,41 @@ int main(){
         std::string command;
         iss >> command;
 
-        if (command == "push")
-        {
+        if (command == "push") {
             int value;
             iss >> value;
             myVector.push_back(value);
         }
-        else if (command == "print")
-        {
+        else if (command == "print") {
             if (myVector.getSize() == 0) {
                 std::cout << "empty" << std::endl;
                 continue;
             }
             myVector.printElements();
         }
-        else if (command == "size")
-        {
+        else if (command == "size") {
             std::cout << myVector.getSize() << std::endl;
         }
-        else if (command == "get")
-        {
+        else if (command == "get") {
             int index;
             iss >> index;
             std::cout << myVector[index] << std::endl;
         }
-        else if (command == "insert")
-        {
+        else if (command == "insert") {
             int index, value;
             iss >> index >> value;
             myVector.insert(index, value);
         }
-        else if (command == "pop")
-        {
+        else if (command == "pop") {
             myVector.pop_back();
         }
-        else if (command == "iterator")
-        {
+        else if (command == "front") {
+            std::cout<<myVector.front()<<std::endl;
+        }
+        else if (command == "back") {
+            std::cout<<myVector.back()<<std::endl;
+        }
+        else if (command == "iterator") {
             if (myVector.getSize() == 0)
             {
                 std::cout << "empty" << std::endl;
@@ -199,8 +199,7 @@ int main(){
             }
             std::cout << std::endl;
         }
-        else if (command == "foreach")
-        {
+        else if (command == "foreach") {
             if (myVector.getSize() == 0)
             {
                 std::cout << "empty" << std::endl;
@@ -212,11 +211,9 @@ int main(){
             }
             std::cout << std::endl;
         }
-        else if (command == "clear")
-        {
+        else if (command == "clear") {
             myVector.clear();
         }
     }
     return 0;
 }
-
