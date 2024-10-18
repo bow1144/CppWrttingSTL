@@ -6,13 +6,15 @@
 #define VECTOR_H
 
 #include <bits/stdc++.h>
-#include "Vector.h"
 
 // 泛型函数
 template <typename T>
 
 class Vector {
 private:
+    // 互斥锁：保护成员变量的访问，避免多个线程同时访问
+    std::mutex vec_mutex;
+
     T *elements; // 指针
     size_t capacity; // 容量
     size_t size{}; // 大小
@@ -35,6 +37,7 @@ public:
     // 构造函数 [begin, end)
     template <typename InputIterator>
     Vector(InputIterator begin, InputIterator end) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
         size = std::distance(begin, end);
         capacity = size;
         elements = new T[size];
@@ -53,17 +56,20 @@ public:
 
     // 析构函数 ：在生命周期结束时调用，释放动态分配的内存
     ~Vector(){
+        std::lock_guard<std::mutex> lock(vec_mutex);
         delete[] elements; // 将指针所指内存清空
     }
 
     // 拷贝构造函数, Vector new_vec = new Vector(other);
     Vector(const Vector &other) : capacity(other.capacity), size(other.size) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
         elements = new T[capacity];
         std::copy(other.elements, other.elements + size, elements);
     }
 
     // 拷贝赋值操作符, Vector vec = other
     Vector& operator = (const Vector& other) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
         if(this == &other) return *this; // 自复制
         delete[] elements;
         capacity = other.capacity;
@@ -142,6 +148,7 @@ public:
 
     // 尾部添加元素 Vector.push_back(0);
     void push_back(const T& value) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
         if(size == capacity) {
             if(!capacity) reserve(1);
             else reserve(2 * capacity);
@@ -151,6 +158,7 @@ public:
 
     // 插入元素 Vector.insert(12, 'A')
     void insert(size_t index, const T& value) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
         if(index >= size) {
             throw std::out_of_range("Index out of range");
         }
@@ -167,6 +175,7 @@ public:
 
     template <typename... Args>
     void emplace(size_t index, Args&&... args) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
         if(index >= size) {
             throw std::out_of_range("Index out of range");
         }
@@ -183,6 +192,7 @@ public:
 
     template <typename... Args>
     void emplace_back(Args&&... args) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
         if(size == capacity) {
             if(!capacity) reserve(1);
             else reserve(2 * capacity);
@@ -251,7 +261,7 @@ public:
         size = count;
     }
 
-    // 构造：range_inti,用范围迭代器构造数组
+    // 构造：range_init,用范围迭代器构造数组
     template<typename InputIterator>
     void range_init(InputIterator begin, InputIterator end) {
         size_t count = std::distance(begin, end);
@@ -291,7 +301,6 @@ public:
             elements = nullptr;
         }
         size = 0;
-
         if(new_capacity) {
             elements = new T[new_capacity];
             capacity = new_capacity;
