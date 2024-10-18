@@ -60,14 +60,14 @@ public:
         delete[] elements; // 将指针所指内存清空
     }
 
-    // 拷贝构造函数, Vector new_vec = new Vector(other);
+    // 拷贝构造函数, Vector new_vec = new Vector(other_vec);
     Vector(const Vector &other) : capacity(other.capacity), size(other.size) {
         std::lock_guard<std::mutex> lock(vec_mutex);
         elements = new T[capacity];
         std::copy(other.elements, other.elements + size, elements);
     }
 
-    // 拷贝赋值操作符, Vector vec = other
+    // 拷贝赋值操作符, vec = other
     Vector& operator = (const Vector& other) {
         std::lock_guard<std::mutex> lock(vec_mutex);
         if(this == &other) return *this; // 自复制
@@ -102,6 +102,15 @@ public:
         return this->getSize() < other.getSize();
     }
 
+    bool operator > (const Vector& other) {
+        size_t min_size = std::min(this->getSize(), other.getSize());
+        for(size_t i=0; i<min_size; i++) {
+            if(this[i] > other[i]) return true;
+            if(this[i] < other[i]) return false;
+        }
+        return this->getSize() > other.getSize();
+    }
+
     bool empty(const Vector& v) {
         return size == 0;
     }
@@ -114,6 +123,15 @@ public:
     [[nodiscard]] size_t getCapacity() const {
         return capacity;
     }
+
+    // 打印数组
+    void printElements() const {
+        for (size_t i=0; i<size; i++) {
+            std::cout<<elements[i]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+
 
     // 分为const/nonconst版本，对应定义时的Vector是否不变
     // 注意返回的是引用，可以直接修改Vector中的值
@@ -150,7 +168,7 @@ public:
     void push_back(const T& value) {
         std::lock_guard<std::mutex> lock(vec_mutex);
         if(size == capacity) {
-            if(!capacity) reserve(1);
+            if(!capacity) reserve(8);
             else reserve(2 * capacity);
         }
         elements[size++] = value;
@@ -275,14 +293,6 @@ public:
         size = count;
     }
 
-    // 打印数组
-    void printElements() const {
-        for (size_t i=0; i<size; i++) {
-            std::cout<<elements[i]<<" ";
-        }
-        std::cout<<std::endl;
-    }
-
     // 放弃多余容量
     void shrink_to_fit() {
         if(size < capacity) {
@@ -309,8 +319,6 @@ public:
             capacity = 0;
         }
     }
-
-
 };
 
 #endif //VECTOR_H
