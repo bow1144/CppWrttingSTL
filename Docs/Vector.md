@@ -274,3 +274,139 @@ template <typename T>
         size++;
     }
 ```
+
+## 八、删除元素
+
+### 8.1 删除单一元素
+```
+    void erase(size_t index) {
+        if(index >= size) {
+            throw std::out_of_range("Index out of range");
+        }
+        for(size_t i=index; i<size-1; i++) {
+            elements[i] = elements[i+1];
+        }
+        size--;
+    }
+```
+1. 提供了`throw`错误抛出
+2. 通过对`elements`的整体迁移实现元素删除
+3. 注意更新`size`
+
+### 8.2 删除范围元素
+```
+    template<typename InputIterator>
+    void erase(InputIterator begin, InputIterator end) {
+        if(begin<elements || end>elements+size || begin>end) {
+            throw std::out_of_range("Invalid iterator range");
+        }
+        size_t len = std::distance(begin, end);
+        for(InputIterator it=begin; it!=end; ++it) {
+            *it = *(it + len);
+        }
+        size -= len;
+    }
+```
+1. 输入内容是迭代器
+2. `*it = *(it + len);`中的`*`代表指针，由迭代器指向内容
+
+### 8.3 pop_back
+```
+    void pop_back() {
+        if(size) {
+            size--;
+        }
+    }
+```
+
+### 8.4 clear
+```
+    void clear() {
+        size = 0;
+    }
+```
+
+## 九、迭代器相关函数
+```
+    [[nodiscard]] T* begin() {
+        return elements;
+    }
+
+    [[nodiscard]] T* begin() const {
+        return elements;
+    }
+
+    [[nodiscard]] T* end() {
+        return elements + size;
+    }
+
+    [[nodiscard]] T* end() const {
+        return elements + size;
+    }
+```
+
+1. 返回`*T`代表返回指针（迭代器），而`T&`代表返回内容
+2. 返回值与是否`const`无关
+
+## 十、覆盖函数
+### 10.1 覆盖为指定长度同一值
+```
+    void fill_init(size_t count, const T& value) {
+        if(count > capacity) {
+            reserve(count);
+        }
+        for(size_t i=0; i<count; i++) {
+            elements[i] = value;
+        }
+        size = count;
+    }
+```
+
+### 10.2 覆盖为另一数组的范围
+```
+    template<typename InputIterator>
+    void range_init(InputIterator begin, InputIterator end) {
+        size_t count = std::distance(begin, end);
+        if(count > capacity) {
+            reserve(count);
+        }
+        size_t i = 0;
+        for(InputIterator it=begin; it!=end; ++it) {
+            elements[i] = *it;
+        }
+        size = count;
+    }
+```
+
+## 十一、内存释放函数
+### 11.1 放弃多余容量 shrink_to_fit
+```
+    void shrink_to_fit() {
+        if(size < capacity) {
+            T* newElement = new T[size];
+            std::copy(elements, elements+size, newElement);
+            delete[] elements;
+            elements = newElement;
+            capacity = size;
+        }
+    }
+```
+1. 将已经填满的部分转移，重置`capacity`
+
+### 11.2 销毁并重新覆盖
+```
+    void distroy_and_recover(size_t new_capacity = 0) {
+        if(elements) {
+            delete[] elements;
+            elements = nullptr;
+        }
+        size = 0;
+        if(new_capacity) {
+            elements = new T[new_capacity];
+            capacity = new_capacity;
+        }
+        else {
+            capacity = 0;
+        }
+    }
+```
