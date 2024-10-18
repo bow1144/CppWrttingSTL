@@ -204,4 +204,73 @@ template <typename T>
 2. `noexcept` 是一个声明，表明这个函数 不会抛出任何异常，编译器会基于此优化调用代码。例如，`std::vector` 在 `noexcept` 的情况下可以避免不必要的异常检查，提升性能。
 3. `[[nodiscard]]`声明此函数返回值重要，在调用没有返回值时编译器警告
 
-## 七、
+## 七、插入元素
+### 7.1 尾部插入元素push_back()
+```
+    void push_back(const T& value) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
+        if(size == capacity) {
+            if(!capacity) reserve(8);
+            else reserve(2 * capacity);
+        }
+        elements[size++] = value;
+    }
+```
+1. 若`size`到达`capacity`的上限，则扩充容量，`reserve`设置为8的原因是初次扩充时即获得一定容量，防止反复调用`reverse`浪费性能
+
+### 7.2 尾部插入元素emplace_back()
+```
+    template <typename... Args>
+    void emplace_back(Args&&... args) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
+        if(size == capacity) {
+            if(!capacity) reserve(1);
+            else reserve(2 * capacity);
+        }
+        elements[size++] = T(std::forward<Args>(args)...);
+    }
+```
+1. `Args&&...` 是一个**转发引用**，它可以同时处理左值引用和右值引用。这是为了支持完美转发，将其左值右值属性完全载入
+2. `void emplace_back(Args&&... args)`可以实现处理任意数量和类型的参数
+3. 相比于`push_back`，`emplace_back`
+   * `push_back`：需要一个已经构造好的对象作为参数。这个方法会将传入的对象拷贝或移动到容器中
+   * `emplace_back`：则可以直接在容器的末尾“原地构造”对象。它会根据传递的参数，直接调用构造函数在容器的内存空间中构造对象，而不会进行多余的拷贝或移动操作
+4. `emplace_back` 更灵活高效，允许直接原地构造对象，避免拷贝或移动的开销，特别是当构造对象需要多个参数时。
+
+### 7.3 插入元素insert和emplace
+```
+    void insert(size_t index, const T& value) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
+        if(index >= size) {
+            throw std::out_of_range("Index out of range");
+        }
+        if (size == capacity) {
+            if(!capacity) reserve(1);
+            else reserve(2 * capacity);
+        }
+        for(size_t i=size; i>index; i--) {
+            elements[i] = elements[i-1];
+        }
+        elements[index] = value;
+        size++;
+    }
+```
+
+```
+    template <typename... Args>
+    void emplace(size_t index, Args&&... args) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
+        if(index >= size) {
+            throw std::out_of_range("Index out of range");
+        }
+        if (size == capacity) {
+            if(!capacity) reserve(1);
+            else reserve(2 * capacity);
+        }
+        for(size_t i=size; i>index; i--) {
+            elements[i] = elements[i-1];
+        }
+        elements[index] = T(std::forward<Args>(args)...);
+        size++;
+    }
+```
