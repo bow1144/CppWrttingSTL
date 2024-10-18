@@ -202,3 +202,6 @@ template <typename T>
 ```
 1. 分为`const`和`noconst`版本，对于`noconst`版本，可以完成以下操作：`vec[10] = 12`
 2. `noexcept` 是一个声明，表明这个函数 不会抛出任何异常，编译器会基于此优化调用代码。例如，`std::vector` 在 `noexcept` 的情况下可以避免不必要的异常检查，提升性能。
+3. `[[nodiscard]]`声明此函数返回值重要，在调用没有返回值时编译器警告
+
+## 七、
