@@ -1,4 +1,4 @@
-## 1. 头部
+## 一、 头部
 ```
 template <typename T>
 ```
@@ -9,7 +9,7 @@ template <typename T>
 ```
 互斥锁：保护成员变量的访问，避免一个函数被多个线程同时访问
 
-## 2. 类内部成员变量
+## 二、 类内部成员变量
 
 ```
     T *elements; // 指针
@@ -21,7 +21,7 @@ template <typename T>
 2. 长度`size`是数组**已经填入数据部分的大小**
 3. 容量`capacity`是数组开辟的堆内存大小
 
-## 3. 内存扩展
+## 三、 内存扩展
 ```
     void reserve(size_t newCapacity) {
         // 因为存储元素的空间是堆，所以空间向上新建
@@ -40,7 +40,7 @@ template <typename T>
 3. `std::copy`输入三个参数：起点，终点，目标起点
 4. `delete[] elements`的作用是销毁数组中的对象并释放内存
 
-## 4. 构造函数
+## 四、 构造函数
 
 ### 4.1 default构造函数
 ```
@@ -75,3 +75,78 @@ template <typename T>
     }
 ```
 1. `this->size = size;`将对象的`size`设置为输入的`size`
+
+### 4.4 析构函数
+```
+    ~Vector(){
+        std::lock_guard<std::mutex> lock(vec_mutex);
+        delete[] elements; // 将指针所指内存清空
+    }
+```
+1. 作用：在生命周期结束时调用，释放动态分配的内存
+
+### 4.5 拷贝构造函数
+```
+    Vector(const Vector &other) : capacity(other.capacity), size(other.size) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
+        elements = new T[capacity];
+        std::copy(other.elements, other.elements + size, elements);
+    }
+```
+1. 作用：`Vector new_vec = new Vector(other_vec);`
+
+## 五、 重载操作符
+### 5.1 拷贝赋值操作符
+```
+    Vector& operator = (const Vector& other) {
+        std::lock_guard<std::mutex> lock(vec_mutex);
+        if(this == &other) return *this; // 自复制
+        delete[] elements;
+        capacity = other.capacity;
+        size = other.size;
+        elements = new T[capacity];
+        std::copy(other.elements, other.elements + size, elements);
+        return *this;
+    }
+```
+1. 作用：新建对象实例，`vec = other_vec`
+2. 先清空本`Vector`再赋值
+
+### 5.2 重载操作符==和!=
+```
+    bool operator == (const Vector& other) {
+        if(this->getSize() != other.getSize()) return false;
+        size_t i = this.begin(), j = other.begin();
+        while(i < this.getSize()) {
+            if(this[i++] != other[j++]) return false;
+        }
+        return true;
+    }
+
+    bool operator != (const Vector& other) {
+        return !(this == other);
+    }
+```
+
+### 5.3 重载比较操作符>和<
+```
+    bool operator < (const Vector& other) {
+        size_t min_size = std::min(this->getSize(), other.getSize());
+        for(size_t i=0; i<min_size; i++) {
+            if(this[i] < other[i]) return true;
+            if(this[i] > other[i]) return false;
+        }
+        return this->getSize() < other.getSize();
+    }
+
+    bool operator > (const Vector& other) {
+        size_t min_size = std::min(this->getSize(), other.getSize());
+        for(size_t i=0; i<min_size; i++) {
+            if(this[i] > other[i]) return true;
+            if(this[i] < other[i]) return false;
+        }
+        return this->getSize() > other.getSize();
+    }
+```
+1. `Vector`的比较是字典序比较，从前往后只要有一个元素不等就比较这个元素，如果一直一致就比较两个数组的长度
+
