@@ -150,3 +150,55 @@ template <typename T>
 ```
 1. `Vector`的比较是字典序比较，从前往后只要有一个元素不等就比较这个元素，如果一直一致就比较两个数组的长度
 
+## 六、状态获取
+### 6.1 类实例状态获取
+```
+    [[nodiscard]] size_t getSize() const {
+        return size;
+    }
+
+    [[nodiscard]] size_t getCapacity() const {
+        return capacity;
+    }
+
+    // 打印数组
+    void printElements() const {
+        for (size_t i=0; i<size; i++) {
+            std::cout<<elements[i]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+```
+
+### 6.2 元素获取
+```
+    T& operator [] (size_t index) noexcept{
+        if (index >= size) {
+            throw std::out_of_range("Index out of range");
+        }
+        return elements[index];
+    }
+
+    T& operator [] (size_t index) const noexcept{
+        if (index >= size) {
+            throw std::out_of_range("Index out of range");
+        }
+        return elements[index];
+    }
+
+    [[nodiscard]] T& front() {
+        if(size) {
+            return elements[0];
+        }
+        else throw std::out_of_range("Index out of range");
+    }
+
+    [[nodiscard]] T& back() {
+        if(size) {
+            return elements[size-1];
+        }
+        else throw std::out_of_range("Index out of range");
+    }
+```
+1. 分为`const`和`noconst`版本，对于`noconst`版本，可以完成以下操作：`vec[10] = 12`
+2. `noexcept` 是一个声明，表明这个函数 不会抛出任何异常，编译器会基于此优化调用代码。例如，`std::vector` 在 `noexcept` 的情况下可以避免不必要的异常检查，提升性能。
